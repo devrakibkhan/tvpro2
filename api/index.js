@@ -1,7 +1,7 @@
 // api/index.js
 
 const PORTAL_URL = "http://line.watchtivo-8k.com/server/load.php"; 
-const MAC_ADDRESS = "00:1A:79:A9:E6:04";
+const MAC_ADDRESS = "00:1A:79:A5:25:A0";
 
 async function getTokenAndCookie() {
   const headers = {
