@@ -3,13 +3,16 @@
 const PORTAL_URL = "http://line.watchtivo-8k.com/server/load.php"; 
 const MAC_ADDRESS = "00:1A:79:A5:25:A0";
 
-// পোর্টালের API এবং প্লেয়ার উভয়ের জন্যই MAG Box-এর অরিজিনাল User-Agent
-const MAG_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C)";
+// পোর্টালের API থেকে ডেটা আনার জন্য MAG Box-এর অরিজিনাল User-Agent (সার্ভারকে ধোঁকা দেওয়ার জন্য)
+const API_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C)";
+
+// আপনার আইপিটিভি প্লেয়ারের জন্য User-Agent
+const PLAYER_USER_AGENT = "MySTB Player";
 
 async function getTokenAndCookie() {
   const headers = {
     "Cookie": `mac=${MAC_ADDRESS}`,
-    "User-Agent": MAG_USER_AGENT
+    "User-Agent": API_USER_AGENT
   };
 
   try {
@@ -47,7 +50,7 @@ export default async function handler(req, res) {
     const headers = {
       "Cookie": auth.cookie,
       "Authorization": `Bearer ${auth.token}`,
-      "User-Agent": MAG_USER_AGENT 
+      "User-Agent": API_USER_AGENT 
     };
 
     const linkUrl = `${PORTAL_URL}?type=itv&action=create_link&cmd=${encodeURIComponent(channelCmd)}&JsHttpRequest=1-xml`;
@@ -62,9 +65,8 @@ export default async function handler(req, res) {
       }
 
       if (streamUrl && streamUrl.startsWith("http")) {
-        // ভিডিও লিংকের সাথে MAG Box-এর User-Agent যুক্ত করে দেওয়া হলো
-        // ফলে প্লেয়ার যখন ভিডিও প্লে করতে যাবে, পোর্টাল ভাববে এটি একটি অরিজিনাল বক্স
-        const finalStreamUrl = `${streamUrl}|User-Agent=${MAG_USER_AGENT}`;
+        // ভিডিও লিংকের সাথে MySTB Player-এর User-Agent যুক্ত করে দেওয়া হলো
+        const finalStreamUrl = `${streamUrl}|User-Agent=${PLAYER_USER_AGENT}`;
         return res.redirect(302, finalStreamUrl);
       } else {
         return res.status(404).send("Stream URL not found or MAC blocked by Server IP.");
@@ -80,7 +82,7 @@ export default async function handler(req, res) {
   const headers = {
     "Cookie": auth.cookie,
     "Authorization": `Bearer ${auth.token}`,
-    "User-Agent": MAG_USER_AGENT 
+    "User-Agent": API_USER_AGENT 
   };
 
   const channelsUrl = `${PORTAL_URL}?type=itv&action=get_all_channels&JsHttpRequest=1-xml`;
@@ -113,9 +115,9 @@ export default async function handler(req, res) {
       const cmd = channel.cmd || "";
       const logo = channel.logo || "";
 
-      // M3U8 ফাইলের ভেতরে প্লেয়ারকে নির্দেশ দেওয়া হলো যেন সে MAG Box-এর User-Agent ব্যবহার করে
-      m3u += `#EXTINF:-1 tvg-id="${id}" tvg-logo="${logo}" user-agent="${MAG_USER_AGENT}",${name}\n`;
-      m3u += `#EXTVLCOPT:http-user-agent=${MAG_USER_AGENT}\n`;
+      // M3U8 ফাইলের ভেতরে প্লেয়ারকে নির্দেশ দেওয়া হলো যেন সে MySTB Player-এর User-Agent ব্যবহার করে
+      m3u += `#EXTINF:-1 tvg-id="${id}" tvg-logo="${logo}" user-agent="${PLAYER_USER_AGENT}",${name}\n`;
+      m3u += `#EXTVLCOPT:http-user-agent=${PLAYER_USER_AGENT}\n`;
       m3u += `${baseUrl}/api?channel=${encodeURIComponent(cmd)}\n`;
     }
 
