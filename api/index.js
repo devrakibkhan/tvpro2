@@ -3,16 +3,13 @@
 const PORTAL_URL = "http://line.watchtivo-8k.com/server/load.php"; 
 const MAC_ADDRESS = "00:1A:79:A5:25:A0";
 
-// পোর্টালের API থেকে চ্যানেল লিস্ট আনার জন্য MAG Box-এর ডিফল্ট User-Agent (এটি পরিবর্তন করবেন না)
-const API_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C)";
-
-// যদি কোড বুঝতে না পারে যে কোন প্লেয়ার ব্যবহার হচ্ছে, তখন এই ডিফল্ট User-Agent কাজ করবে
-const DEFAULT_PLAYER_UA = "IPTVSmartersPro"; 
+// পোর্টালের API এবং প্লেয়ার উভয়ের জন্যই MAG Box-এর অরিজিনাল User-Agent
+const MAG_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C)";
 
 async function getTokenAndCookie() {
   const headers = {
     "Cookie": `mac=${MAC_ADDRESS}`,
-    "User-Agent": API_USER_AGENT
+    "User-Agent": MAG_USER_AGENT
   };
 
   try {
@@ -33,7 +30,7 @@ async function getTokenAndCookie() {
 }
 
 export default async function handler(req, res) {
-  // ১. CORS Policy ফিক্স করা হলো যেন যেকোনো প্লেয়ার থেকে এক্সেস পায়
+  // ১. CORS Policy ফিক্স করা হলো যেন যেকোনো প্লেয়ার বা ব্রাউজার থেকে এক্সেস পায়
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   
@@ -43,9 +40,6 @@ export default async function handler(req, res) {
 
   const channelCmd = req.query.channel;
 
-  // ক্লায়েন্ট (আপনার প্লেয়ার) যেই User-Agent পাঠাবে, কোড সেটা রিসিভ করবে। না পেলে ডিফল্টটা ব্যবহার করবে।
-  const clientUserAgent = req.headers['user-agent'] || DEFAULT_PLAYER_UA;
-
   // ২. চ্যানেল প্লে করার রিকোয়েস্ট (যখন লিংকে channel থাকবে)
   if (channelCmd) {
     const auth = await getTokenAndCookie();
@@ -53,7 +47,7 @@ export default async function handler(req, res) {
     const headers = {
       "Cookie": auth.cookie,
       "Authorization": `Bearer ${auth.token}`,
-      "User-Agent": API_USER_AGENT // এখানে MAG Box-এর ইউজার এজেন্টই থাকতে হবে
+      "User-Agent": MAG_USER_AGENT 
     };
 
     const linkUrl = `${PORTAL_URL}?type=itv&action=create_link&cmd=${encodeURIComponent(channelCmd)}&JsHttpRequest=1-xml`;
@@ -68,8 +62,9 @@ export default async function handler(req, res) {
       }
 
       if (streamUrl && streamUrl.startsWith("http")) {
-        // ভিডিও লিংকের সাথে আপনার প্লেয়ারের ডাইনামিক User-Agent যুক্ত করে দেওয়া হলো
-        const finalStreamUrl = `${streamUrl}|User-Agent=${clientUserAgent}`;
+        // ভিডিও লিংকের সাথে MAG Box-এর User-Agent যুক্ত করে দেওয়া হলো
+        // ফলে প্লেয়ার যখন ভিডিও প্লে করতে যাবে, পোর্টাল ভাববে এটি একটি অরিজিনাল বক্স
+        const finalStreamUrl = `${streamUrl}|User-Agent=${MAG_USER_AGENT}`;
         return res.redirect(302, finalStreamUrl);
       } else {
         return res.status(404).send("Stream URL not found or MAC blocked by Server IP.");
@@ -85,7 +80,7 @@ export default async function handler(req, res) {
   const headers = {
     "Cookie": auth.cookie,
     "Authorization": `Bearer ${auth.token}`,
-    "User-Agent": API_USER_AGENT // চ্যানেল ফেচ করার জন্য MAG Box-এর ইউজার এজেন্ট
+    "User-Agent": MAG_USER_AGENT 
   };
 
   const channelsUrl = `${PORTAL_URL}?type=itv&action=get_all_channels&JsHttpRequest=1-xml`;
@@ -118,9 +113,9 @@ export default async function handler(req, res) {
       const cmd = channel.cmd || "";
       const logo = channel.logo || "";
 
-      // M3U8 ফাইলের ভেতরে প্লেয়ারকে বোঝানোর জন্য ডিফল্ট User-Agent সেট করা হলো
-      m3u += `#EXTINF:-1 tvg-id="${id}" tvg-logo="${logo}" user-agent="${DEFAULT_PLAYER_UA}",${name}\n`;
-      m3u += `#EXTVLCOPT:http-user-agent=${DEFAULT_PLAYER_UA}\n`;
+      // M3U8 ফাইলের ভেতরে প্লেয়ারকে নির্দেশ দেওয়া হলো যেন সে MAG Box-এর User-Agent ব্যবহার করে
+      m3u += `#EXTINF:-1 tvg-id="${id}" tvg-logo="${logo}" user-agent="${MAG_USER_AGENT}",${name}\n`;
+      m3u += `#EXTVLCOPT:http-user-agent=${MAG_USER_AGENT}\n`;
       m3u += `${baseUrl}/api?channel=${encodeURIComponent(cmd)}\n`;
     }
 
