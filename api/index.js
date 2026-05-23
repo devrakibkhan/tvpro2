@@ -1,7 +1,7 @@
 // api/index.js
 
-const PORTAL_URL = "http://main.light-ott.net"; 
-const MAC_ADDRESS = "00:1A:79:7A:DB:FD";
+const PORTAL_URL = "http://line.watchtivo-8k.com/server/load.php"; 
+const MAC_ADDRESS = "00:1A:79:A9:E6:04";
 
 async function getTokenAndCookie() {
   const headers = {
