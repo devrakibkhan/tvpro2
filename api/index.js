@@ -1,7 +1,7 @@
 // api/index.js
 
-const PORTAL_URL = "http://line.watchtivo-8k.com/server/load.php"; 
-const MAC_ADDRESS = "00:1A:79:A5:25:A0";
+const PORTAL_URL = "http://main.light-ott.net"; 
+const MAC_ADDRESS = "00:1A:79:7A:DB:FD";
 
 // পোর্টালের API থেকে ডেটা আনার জন্য MAG Box-এর অরিজিনাল User-Agent (সার্ভারকে ধোঁকা দেওয়ার জন্য)
 const API_USER_AGENT = "Mozilla/5.0 (QtEmbedded; U; Linux; C)";
